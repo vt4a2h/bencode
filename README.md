@@ -23,7 +23,7 @@ if (auto result = bencode::decode(data); result.has_value()) {
     // Vector of the top-level elements discovered in the file:
     // std::vector<Element>
     auto elements = result.value();
-    for (auto &&element: elements) {
+    for (const auto &element: elements) {
         if (element.is<bencode::Type::Dict>()) {
             // std::map<std::string, bencode::Element>
             auto dict = element.as<bencode::Type::Dict>();
