@@ -25,24 +25,24 @@ public:
     using std::variant<Value, Error>::variant;
 
     [[nodiscard]]
-    constexpr bool has_value() const {
+    constexpr bool hasValue() const {
         return std::holds_alternative<Value>(*this);
     }
 
     [[nodiscard]]
-    constexpr bool has_error() const {
+    constexpr bool hasError() const {
         return std::holds_alternative<Error>(*this);
     }
 
     [[nodiscard]]
     Value value() const {
-        assert(has_value());
+        assert(hasValue());
         return std::get<Value>(*this);
     }
 
     [[nodiscard]]
     Error error() const {
-        assert(has_error());
+        assert(hasError());
         return std::get<Error>(*this);
     }
 
@@ -52,7 +52,7 @@ public:
     }
 
     friend constexpr std::partial_ordering operator<=>(const Expected<Value> &lhs, const Expected<Value> &rhs) {
-        if (lhs.has_error() || rhs.has_error())
+        if (lhs.hasError() || rhs.hasError())
             return std::partial_ordering::unordered;
 
         const auto &l = std::get<Value>(lhs);

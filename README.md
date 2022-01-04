@@ -19,7 +19,7 @@ You need a compiler with at least C++20 support to build the library.
 Decoding a file can be done as follows:
 ```c++
 auto data = readFile(fileName);
-if (auto result = bencode::decode(data); result.has_value()) {
+if (auto result = bencode::decode(data); result.hasValue()) {
     // Vector of the top-level elements discovered in the file:
     // std::vector<Element>
     auto elements = result.value();

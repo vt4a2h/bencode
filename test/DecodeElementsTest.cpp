@@ -66,7 +66,7 @@ TEST_CASE("Decode valid elements")
     auto elementsResult = bc::decode(inputString);
 
     SECTION("Scanned without errors") {
-        REQUIRE(elementsResult.has_value());
+        REQUIRE(elementsResult.hasValue());
     }
 
     auto elements = elementsResult.value();
@@ -114,7 +114,7 @@ TEST_CASE("Decode invalid elements") {
     auto elementsResult = bc::decode(inputString);
 
     SECTION("Result has an error") {
-        REQUIRE(elementsResult.has_error());
+        REQUIRE(elementsResult.hasError());
     }
 
     SECTION("Error has valid type") {

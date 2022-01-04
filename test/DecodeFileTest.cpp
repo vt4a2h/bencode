@@ -21,5 +21,5 @@ TEST_CASE("Decoded file is valid")
     auto fileName = GENERATE("open_suse_15_3.torrent", "sts_2.torrent", "mtr_rl.torrent", "mtr_rl_10x.torrent");
     auto data = helpers::readFile(fileName);
 
-    REQUIRE(bc::decode(data).has_value());
+    REQUIRE(bc::decode(data).hasValue());
 }

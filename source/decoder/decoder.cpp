@@ -118,7 +118,7 @@ static Expected<SvItElem> extractStringElement(auto begin, auto end) {
 }
 
 static std::optional<Error> addElementToStack(auto extractor, auto &stack, auto &it, auto end) {
-    if (auto result = std::invoke(extractor, it, end); result.has_value()) {
+    if (auto result = std::invoke(extractor, it, end); result.hasValue()) {
         auto &&[endIt, element] = result.value();
         stack.push(std::move(element));
         it = std::prev(endIt); // +1 in the loop
