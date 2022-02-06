@@ -129,8 +129,8 @@ static std::optional<Error> addElementToStack(auto extractor, auto &stack, auto 
     return std::nullopt;
 }
 
-static void createNewList(Stack &stack) { stack.push(Type::List{}); }
-static void createNewDict(Stack &stack) { stack.push(Type::Dict{}); }
+static void createNewList(Stack &stack) { stack.emplace<Type::List>({}); }
+static void createNewDict(Stack &stack) { stack.emplace<Type::Dict>({}); }
 
 static std::optional<Error> addElement(Elements &elements, Stack &stack) {
     if (stack.empty())
@@ -147,8 +147,8 @@ static std::optional<Error> addElement(Elements &elements, Stack &stack) {
             previousElem.as<Type::List>().emplace_back(std::move(currentElem));
         else if (previousElem.is<Type::Dict>()) {
             if (currentElem.is<Type::String>()) {
-                stack.push(currentElem.as<Type::String>());
-                stack.push(Type::Null{});
+                stack.push(std::move(currentElem).as<Type::String>());
+                stack.emplace<Type::Null>({});
             } else
                 return makeDecodingError("wrong key type");
         } else if (previousElem.is<Type::Null>()) {
