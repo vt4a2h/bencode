@@ -1,0 +1,3 @@
+[submodule "3rdparty/result"]
+	path = 3rdparty/result
+	url = git@github.com:vt4a2h/result.git
