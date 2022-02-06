@@ -114,7 +114,7 @@ static Expected<SvItElem> extractStringElement(auto begin, auto end) {
 
     auto dataEnd = std::next(dataBegin, bytesCount);
 
-    return std::make_pair(dataEnd, Type::String{dataBegin, dataEnd});
+    return SvItElem(dataEnd, Type::String{dataBegin, dataEnd});
 }
 
 static std::optional<Error> addElementToStack(auto extractor, auto &stack, auto &it, auto end) {

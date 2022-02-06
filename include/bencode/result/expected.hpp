@@ -15,55 +15,11 @@
 
 #include "error.hpp"
 
+#include <result/result.hpp>
+
 namespace bencode {
 
-//! Simple class that holds either result value or an error
 template <class Value>
-class Expected : public std::variant<Value, Error>
-{
-public:
-    using std::variant<Value, Error>::variant;
-
-    [[nodiscard]]
-    constexpr bool hasValue() const {
-        return std::holds_alternative<Value>(*this);
-    }
-
-    [[nodiscard]]
-    constexpr bool hasError() const {
-        return std::holds_alternative<Error>(*this);
-    }
-
-    [[nodiscard]]
-    Value value() const {
-        assert(hasValue());
-        return std::get<Value>(*this);
-    }
-
-    [[nodiscard]]
-    Error error() const {
-        assert(hasError());
-        return std::get<Error>(*this);
-    }
-
-    [[nodiscard]]
-    Value operator*() const {
-        return value();
-    }
-
-    friend constexpr std::partial_ordering operator<=>(const Expected<Value> &lhs, const Expected<Value> &rhs) {
-        if (lhs.hasError() || rhs.hasError())
-            return std::partial_ordering::unordered;
-
-        const auto &l = std::get<Value>(lhs);
-        const auto &r = std::get<Value>(rhs);
-
-        return l <=> r;
-    }
-
-    friend bool operator ==(const Expected<Value> &lhs, const Expected<Value> &rhs) {
-        return std::is_eq(lhs <=> rhs);
-    }
-};
+using Expected = result::Result<Value, Error>;
 
 } // namespace bencode

@@ -21,8 +21,10 @@ option(BUILD_BENCHMARKS "Build benchmarks" OFF)
 option(BUILD_TESTS "Build tests" OFF)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/result/include)
 
 add_subdirectory(source)
+add_subdirectory(3rdparty/result)
 
 if (BUILD_TESTING OR BUILD_BENCHMARKS)
     add_subdirectory(helpers)
