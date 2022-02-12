@@ -26,7 +26,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/result/include)
 add_subdirectory(source)
 add_subdirectory(3rdparty/result)
 
-if (BUILD_TESTING OR BUILD_BENCHMARKS)
+if (BUILD_TESTS OR BUILD_BENCHMARKS)
     add_subdirectory(helpers)
     include_directories(${CMAKE_SOURCE_DIR}/helpers/include)
 endif()
