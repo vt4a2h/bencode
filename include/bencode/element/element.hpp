@@ -15,6 +15,7 @@
 #include <vector>
 #include <map>
 #include <utility>
+#include <compare>
 
 namespace bencode {
 
@@ -36,7 +37,10 @@ using BaseElementType = std::variant<Type::Null, Type::Int, Type::String, Type::
 
 } // details
 
-//! Decoded element
+//! Decoded element.
+//! \note The lifetime of \p raw corresponds to the lifetime of a string passed
+//! to the \p decoder::decode. If you are not going to use \p raw at all,
+//! you don't have to care about it.
 struct Element : public details::BaseElementType {
     using details::BaseElementType::variant;
 
@@ -54,6 +58,10 @@ struct Element : public details::BaseElementType {
 
     template <class T>
     inline constexpr const T &&as() const && { return std::get<T>(*this); }
+
+    auto operator<=>(const Element&) const = default;
+
+    std::string_view raw;
 };
 
 } // namespace bencode

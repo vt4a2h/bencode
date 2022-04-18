@@ -16,7 +16,8 @@
 
 namespace bencode {
 
-//! Bencode \p elements
+//! Bencode \p elements.
+//! \note \p bencode::Element::raw is not used in this function.
 [[nodiscard]]
 std::string encode(const Elements &elements);
 

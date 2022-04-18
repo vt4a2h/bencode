@@ -20,15 +20,19 @@ namespace bencode {
 
 using namespace details;
 
-class Stack : public std::stack<Element> {
+template <class E>
+class Stack : public std::stack<E> {
 public:
     [[nodiscard]]
-    Element take() {
-        auto e = std::move(*(std::prev(std::end(c))));
-        pop();
+    E take() {
+        auto e = std::move(*(std::prev(std::end(this->c))));
+        this->pop();
         return e;
     }
 };
+
+using ElementStack = Stack<Element>;
+using RawDataStack = Stack<std::string_view::iterator>;
 
 inline static constexpr bool isNonZeroDigit(char c) {
     switch (c) {
@@ -129,24 +133,29 @@ static std::optional<Error> addElementToStack(auto extractor, auto &stack, auto 
     return std::nullopt;
 }
 
-static void createNewList(Stack &stack) { stack.emplace<Type::List>({}); }
-static void createNewDict(Stack &stack) { stack.emplace<Type::Dict>({}); }
+static void createNewList(ElementStack &stack) { stack.emplace<Type::List>({}); }
+static void createNewDict(ElementStack &stack) { stack.emplace<Type::Dict>({}); }
 
-static std::optional<Error> addElement(Elements &elements, Stack &stack) {
+static std::optional<Error> addElement(Elements &elements, ElementStack &stack, RawDataStack &rawDataStack) {
     if (stack.empty())
         return makeDecodingError("wrong end delimiter");
 
     auto currentElem = stack.take();
+    auto rawDataEnd = rawDataStack.take();
 
-    if (stack.empty())
+    if (stack.empty()) {
         elements.emplace_back(std::move(currentElem));
-    else {
+        elements.back().raw = std::string_view(rawDataStack.take(), std::next(rawDataEnd));
+    } else {
         auto &previousElem = stack.top();
 
-        if (previousElem.is<Type::List>())
-            previousElem.as<Type::List>().emplace_back(std::move(currentElem));
-        else if (previousElem.is<Type::Dict>()) {
+        if (previousElem.is<Type::List>()) {
+            auto &list = previousElem.as<Type::List>();
+            list.emplace_back(std::move(currentElem));
+            list.back().raw = std::string_view(rawDataStack.take(), std::next(rawDataEnd));
+        } else if (previousElem.is<Type::Dict>()) {
             if (currentElem.is<Type::String>()) {
+                currentElem.raw = std::string_view(rawDataStack.take(), std::next(rawDataEnd));
                 stack.push(std::move(currentElem).as<Type::String>());
                 stack.emplace<Type::Null>({});
             } else
@@ -158,12 +167,14 @@ static std::optional<Error> addElement(Elements &elements, Stack &stack) {
             if (!previousElem.is<Type::String>())
                 return makeDecodingError("wrong key type");
 
+            currentElem.raw = std::string_view(rawDataStack.take(), std::next(rawDataEnd));
             auto kv = std::make_pair(std::move(previousElem).as<Type::String>(), std::move(currentElem));
             stack.pop();
 
-            if (!stack.empty() && stack.top().is<Type::Dict>())
-                stack.top().as<Type::Dict>().insert(std::move(kv));
-            else
+            if (!stack.empty() && stack.top().is<Type::Dict>()) {
+                auto &dict = stack.top().as<Type::Dict>();
+                dict.insert(std::move(kv));
+            } else
                 return makeDecodingError("no dict to add key");
         }
     }
@@ -174,29 +185,36 @@ static std::optional<Error> addElement(Elements &elements, Stack &stack) {
 // NOTE: the format is very simple and the data is also not a stream.
 //       I don't think that would make much sense to use a separate
 //       tokenizer here.
-static Expected<Elements> decodeImpl(auto it, auto end) {
-    Stack stack;
+static Expected<Elements> decodeImpl(SvIt it, SvIt end) {
+    ElementStack stack;
     Elements elements;
+
+    RawDataStack rawDataStack;
 
     for (; it != end; ++it) {
         switch (*it) {
             break; case IntStartDelim:
+                rawDataStack.push(it);
                 if (auto err = addElementToStack(extractIntElement<SvIt, SvIt>, stack, ++it, end); err.has_value())
                     return err.value();
 
             break; case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
+                rawDataStack.push(it);
                 if (auto err = addElementToStack(extractStringElement<SvIt, SvIt>, stack, it, end); err.has_value())
                     return err.value();
                 [[fallthrough]];
 
             case EndDelim:
-                if (auto err = addElement(elements, stack); err.has_value())
+                rawDataStack.push(it);
+                if (auto err = addElement(elements, stack, rawDataStack); err.has_value())
                     return err.value();
 
             break; case ListStartDelim:
+                rawDataStack.push(it);
                 createNewList(stack);
 
             break; case DictStartDelim:
+                rawDataStack.push(it);
                 createNewDict(stack);
 
             break; default:
