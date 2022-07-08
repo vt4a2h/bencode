@@ -37,29 +37,33 @@ using BaseElementType = std::variant<Type::Null, Type::Int, Type::String, Type::
 
 } // details
 
-//! Decoded element.
-//! \note The lifetime of \p raw corresponds to the lifetime of a string passed
-//! to the \p decoder::decode. If you are not going to use \p raw at all,
-//! you don't have to care about it.
+/*! Decoded element
+ *
+ *  Always use \p is before you call \p as.
+ *
+ *  \note The lifetime of \p raw corresponds to the lifetime of a string passed
+ *  to the \p decoder::decode. If you are not going to use \p raw at all,
+ *  you don't have to care about it.
+ */
 struct Element : public details::BaseElementType {
     using details::BaseElementType::variant;
 
     template <class T> [[nodiscard]]
-    inline constexpr bool is() const { return std::holds_alternative<T>(*this); }
+    inline constexpr bool is() const noexcept { return std::holds_alternative<T>(*this); }
 
     template <class T>
-    inline constexpr T &as() & { return std::get<T>(*this); }
+    inline constexpr T &as() & noexcept { return *std::get_if<T>(this); }
 
     template <class T>
-    inline constexpr const T &as() const & { return std::get<T>(*this); }
+    inline constexpr const T &as() const & noexcept { return *std::get_if<T>(this); }
 
     template <class T>
-    inline constexpr T &&as() && { return std::get<T>(std::move(*this)); }
+    inline constexpr T &&as() && noexcept { return std::move(*std::get_if<T>(this)); }
 
     template <class T>
-    inline constexpr const T &&as() const && { return std::get<T>(*this); }
+    inline constexpr const T &&as() const && noexcept { return std::move(*std::get_if<T>(this)); }
 
-    auto operator<=>(const Element&) const = default;
+    auto operator<=>(const Element&) const noexcept = default;
 
     std::string_view raw;
 };
