@@ -9,12 +9,11 @@
 // See LICENSE file for the further details.
 //
 #include <bencode/decoder/decoder.hpp>
+#include <bencode/details/delimiters.hpp>
 
 #include <charconv>
 #include <stack>
 #include <functional>
-
-#include <bencode/details/delimiters.hpp>
 
 namespace bencode {
 
