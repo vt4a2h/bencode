@@ -202,9 +202,8 @@ static Expected<Elements> decodeImpl(SvIt it, SvIt end) {
                 rawDataStack.push(it);
                 if (auto err = addElementToStack(extractStringElement<SvIt, SvIt>, stack, it, end); err.has_value())
                     return err.value();
-                [[fallthrough]];
 
-            case EndDelim:
+            [[fallthrough]]; case EndDelim:
                 rawDataStack.push(it);
                 if (auto err = addElement(elements, stack, rawDataStack); err.has_value())
                     return err.value();
