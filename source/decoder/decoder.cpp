@@ -175,6 +175,8 @@ static std::optional<Error> addElement(Elements &elements, ElementStack &stack, 
                 dict.insert(std::move(kv));
             } else
                 return makeDecodingError("no dict to add key");
+        } else {
+            return makeDecodingError("invalid element type");
         }
     }
 
