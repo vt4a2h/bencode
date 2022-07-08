@@ -45,14 +45,13 @@ void encodeDict(std::stringstream &ss, const Type::Dict &dict) {
 // Do not rush with improving this, please!
 // https://quick-bench.com/q/LhdP-9y6CqwGxB-WtDlbG27o_5Y
 void encodeElem(std::stringstream &ss, const Element &element) {
-    if (element.is<Type::Int>())
-        encodeInt(ss, element.as<Type::Int>());
-    else if (element.is<Type::String>())
-        encodeString(ss, element.as<Type::String>());
-    else if (element.is<Type::List>())
-        encodeList(ss, element.as<Type::List>());
-    else if (element.is<Type::Dict>())
-        encodeDict(ss, element.as<Type::Dict>());
+    switch (details::indexType(element)) {
+        break; case details::BaseElementIndexType::Int: encodeInt(ss, element.as<Type::Int>());
+        break; case details::BaseElementIndexType::String: encodeString(ss, element.as<Type::String>());
+        break; case details::BaseElementIndexType::List: encodeList(ss, element.as<Type::List>());
+        break; case details::BaseElementIndexType::Dict: encodeDict(ss, element.as<Type::Dict>());
+        default: /*pass*/;
+    }
 }
 
 std::string encode(const Elements &elements) {

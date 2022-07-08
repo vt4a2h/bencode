@@ -34,6 +34,18 @@ struct Type
 namespace details {
 
 using BaseElementType = std::variant<Type::Null, Type::Int, Type::String, Type::List, Type::Dict>;
+enum class BaseElementIndexType { Null, Int, String, List, Dict };
+
+inline constexpr BaseElementIndexType indexType(const details::BaseElementType &e) {
+    switch (e.index()) {
+        case 0: return BaseElementIndexType::Null;
+        case 1: return BaseElementIndexType::Int;
+        case 2: return BaseElementIndexType::String;
+        case 3: return BaseElementIndexType::List;
+        case 4: return BaseElementIndexType::Dict;
+        default: return BaseElementIndexType::Null;
+    }
+}
 
 } // details
 
