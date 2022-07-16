@@ -135,6 +135,51 @@ static std::optional<Error> addElementToStack(auto extractor, auto &stack, auto 
 static void createNewList(ElementStack &stack) { stack.emplace<Type::List>({}); }
 static void createNewDict(ElementStack &stack) { stack.emplace<Type::Dict>({}); }
 
+static void addListElement(Element &currentElement, Element &previousElement,
+                           RawDataStack &rawDataStack, std::string_view::iterator rawDataEnd)
+{
+    auto &list = previousElement.as<Type::List>();
+    list.emplace_back(std::move(currentElement));
+    list.back().raw = std::string_view(rawDataStack.take(), std::next(rawDataEnd));
+}
+
+static std::optional<Error> addDictElement(Element &currentElement, ElementStack &stack,
+                                           RawDataStack &rawDataStack, std::string_view::iterator rawDataEnd)
+{
+    if (!currentElement.is<Type::String>())
+        return makeDecodingError("wrong key type");
+
+    currentElement.raw = std::string_view(rawDataStack.take(), std::next(rawDataEnd));
+    stack.push(std::move(currentElement).as<Type::String>());
+    stack.emplace<Type::Null>({});
+
+    return std::nullopt;
+}
+
+static std::optional<Error> addDictKeyValueElement(Element &currentElement, ElementStack &stack,
+                                                   RawDataStack &rawDataStack, std::string_view::iterator rawDataEnd)
+{
+    stack.pop();
+    if (stack.empty())
+        return makeDecodingError("inconsistent dictionary");
+
+    auto &previousElem = stack.top();
+    if (!previousElem.is<Type::String>())
+        return makeDecodingError("wrong key type");
+
+    currentElement.raw = std::string_view(rawDataStack.take(), std::next(rawDataEnd));
+    auto keyValuePair = std::make_pair(std::move(previousElem).as<Type::String>(), std::move(currentElement));
+    stack.pop();
+
+    if (stack.empty() || !stack.top().is<Type::Dict>())
+        return makeDecodingError("no dict to add key");
+
+    auto &dict = stack.top().as<Type::Dict>();
+    dict.insert(std::move(keyValuePair));
+
+    return std::nullopt;
+}
+
 static std::optional<Error> addElement(Elements &elements, ElementStack &stack, RawDataStack &rawDataStack) {
     if (stack.empty())
         return makeDecodingError("wrong end delimiter");
@@ -148,35 +193,19 @@ static std::optional<Error> addElement(Elements &elements, ElementStack &stack, 
     } else {
         auto &previousElem = stack.top();
 
-        if (previousElem.is<Type::List>()) {
-            auto &list = previousElem.as<Type::List>();
-            list.emplace_back(std::move(currentElem));
-            list.back().raw = std::string_view(rawDataStack.take(), std::next(rawDataEnd));
-        } else if (previousElem.is<Type::Dict>()) {
-            if (currentElem.is<Type::String>()) {
-                currentElem.raw = std::string_view(rawDataStack.take(), std::next(rawDataEnd));
-                stack.push(std::move(currentElem).as<Type::String>());
-                stack.emplace<Type::Null>({});
-            } else
-                return makeDecodingError("wrong key type");
-        } else if (previousElem.is<Type::Null>()) {
-            stack.pop();
+        switch (details::indexType(previousElem)) {
+            break; case details::BaseElementIndexType::List:
+                addListElement(currentElem, previousElem, rawDataStack, rawDataEnd);
 
-            previousElem = stack.top();
-            if (!previousElem.is<Type::String>())
-                return makeDecodingError("wrong key type");
+            break; case details::BaseElementIndexType::Dict:
+                if (auto err = addDictElement(currentElem, stack, rawDataStack, rawDataEnd); err.has_value())
+                    return err;
 
-            currentElem.raw = std::string_view(rawDataStack.take(), std::next(rawDataEnd));
-            auto kv = std::make_pair(std::move(previousElem).as<Type::String>(), std::move(currentElem));
-            stack.pop();
+            break; case details::BaseElementIndexType::Null:
+                if (auto err = addDictKeyValueElement(currentElem, stack, rawDataStack, rawDataEnd); err.has_value())
+                    return err;
 
-            if (!stack.empty() && stack.top().is<Type::Dict>()) {
-                auto &dict = stack.top().as<Type::Dict>();
-                dict.insert(std::move(kv));
-            } else
-                return makeDecodingError("no dict to add key");
-        } else {
-            return makeDecodingError("invalid element type");
+            break; default: return makeDecodingError("invalid element type");
         }
     }
 
